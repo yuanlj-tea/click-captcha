@@ -1,0 +1,24 @@
+{
+    "name": "yuanlj-tea/click-captcha",
+    "description": "click captcha",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Allen",
+            "email": "1107806823@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "ext-gd": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ClickCaptcha\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    }
+}
