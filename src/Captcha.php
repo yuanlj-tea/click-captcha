@@ -91,8 +91,12 @@ class Captcha
 
     public function drawWord()
     {
-        $randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight,$this->fontSize);
+        $randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight, $this->fontSize);
+        $_SESSION['random_string'] = array_column($randomString, 'word');
 
+        shuffle($randomString);
+
+        pd($_SESSION['random_string'],$randomString);
         foreach ($randomString as $k => $v) {
             $randAngle = mt_rand(0, 90);
 
