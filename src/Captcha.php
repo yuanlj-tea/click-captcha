@@ -52,7 +52,8 @@ class Captcha
 
     public function __construct()
     {
-        if (!isset($_SESSION)) {
+        // start session if is not started already
+        if (false === headers_sent() && '' === session_id()) {
             session_start();
         }
         $this->getRandomBg();
@@ -96,7 +97,7 @@ class Captcha
 
         shuffle($randomString);
 
-        pd($_SESSION['random_string'],$randomString);
+        pd($_SESSION['random_string'], $randomString);
         foreach ($randomString as $k => $v) {
             $randAngle = mt_rand(0, 90);
 
