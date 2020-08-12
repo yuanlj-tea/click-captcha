@@ -50,6 +50,12 @@ class Captcha
      */
     protected $randomBg;
 
+    /**
+     * 随机的汉字
+     * @var
+     */
+    protected $randomString;
+
     public function __construct()
     {
         // start session if is not started already
@@ -69,6 +75,11 @@ class Captcha
     public function createBackgroundImage()
     {
         $this->createImg();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->drawLine();
+        }
+        $this->drawSinLine($this->bgWidth/2);
 
         $this->drawWord();
 
@@ -90,16 +101,63 @@ class Captcha
         $this->bgHeight = $imgHeight;
     }
 
+    //画正弦干扰线
+    private function drawSinLine($w)
+    {
+        $h = $this->bgHeight;
+        $h1 = rand(-5, 5);
+        $h2 = rand(-1, 1);
+        $w2 = rand(10, 15);
+        $h3 = rand(4, 6);
+
+        $red = mt_rand(100, 255);
+        $green = mt_rand(100, 255);
+        $blue = mt_rand(100, 255);
+
+        $color = imagecolorallocate($this->imgBg, $red, $green, $blue);
+
+        for ($i = -$w / 2; $i < $w / 2; $i = $i + 0.1) {
+            $y = $h / $h3 * sin($i / $w2) + $h / 2 + $h1;
+            imagesetpixel($this->imgBg, $i + $w / 2, $y, $color);
+            $h2 != 0 ? imagesetpixel($this->imgBg, $i + $w / 2, $y + $h2, $color) : null;
+        }
+    }
+
+    public function drawLine()
+    {
+        $red = mt_rand(100, 255);
+        $green = mt_rand(100, 255);
+        $blue = mt_rand(100, 255);
+
+        $color = imagecolorallocate($this->imgBg, $red, $green, $blue);
+
+        if (mt_rand(0, 1)) { // Horizontal
+            $Xa = mt_rand(0, $this->bgWidth / 2);
+            $Ya = mt_rand(0, $this->bgHeight);
+            $Xb = mt_rand($this->bgWidth / 2, $this->bgWidth);
+            $Yb = mt_rand(0, $this->bgHeight);
+        } else { // Vertical
+            $Xa = mt_rand(0, $this->bgWidth);
+            $Ya = mt_rand(0, $this->bgHeight / 2);
+            $Xb = mt_rand(0, $this->bgWidth);
+            $Yb = mt_rand($this->bgHeight / 2, $this->bgHeight);
+        }
+        imagesetthickness($this->imgBg, mt_rand(1, 3));
+        imageline($this->imgBg, $Xa, $Ya, $Xb, $Yb, $color);
+    }
+
     public function drawWord()
     {
-        $randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight, $this->fontSize);
-        $_SESSION['random_string'] = array_column($randomString, 'word');
+        $this->randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight, $this->fontSize);
 
-        shuffle($randomString);
+        $_SESSION['random_string'] = array_slice($this->randomString, 0, $this->wordsNum - 1);
 
-        pd($_SESSION['random_string'], $randomString);
-        foreach ($randomString as $k => $v) {
-            $randAngle = mt_rand(0, 90);
+        shuffle($this->randomString);
+
+        // file_put_contents('./a.log',print_r($_SESSION['random_string'],true));
+
+        foreach ($this->randomString as $k => $v) {
+            $randAngle = mt_rand(-30, 30);
 
             $color = imagecolorallocate($this->imgBg, rand(40, 140), rand(40, 140), rand(40, 140));
 
