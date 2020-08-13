@@ -7,4 +7,4 @@ $obj = new \ClickCaptcha\Captcha();
 
 $obj->getInline();
 
-$code = $obj->getCode();
+$obj->output();
