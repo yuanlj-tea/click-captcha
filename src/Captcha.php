@@ -352,21 +352,30 @@ class Captcha implements CaptchaInterface
             throw new Exception('无效的参数');
         }
 
-        foreach ($param as $k => $v) {
-            if (!isset($v['x']) || !isset($v['y'])) {
-                throw new \Exception('缺少参数');
+        $checkCode = array_column($this->code, 'scope');
+
+        foreach ($checkCode as $k => $v) {
+            if (!isset($param[$k])) {
+                return false;
             }
+
+            if (!isset($param[$k]['x']) || !isset($param[$k]['y'])) {
+                return false;
+            }
+
+            $x = $param[$k]['x'];
+            $y = $param[$k]['y'];
+
             if (
             !(
-                $v['x'] >= $this->code[$k]['scope']['x_limit_left'] &&
-                $v['x'] <= $this->code[$k]['scope']['x_limit_right'] &&
-                $v['y'] >= $this->code[$k]['scope']['y_limit_up'] &&
-                $v['y'] <= $this->code[$k]['scope']['y_limit_down']
+                $x >= $v['x_limit_left'] && $x <= $v['x_limit_right'] &&
+                $y >= $v['y_limit_up'] && $y <= $v['y_limit_down']
             )
             ) {
                 return false;
             }
         }
+
         return true;
     }
 }

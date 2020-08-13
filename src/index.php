@@ -8,5 +8,3 @@ $obj = new \ClickCaptcha\Captcha();
 $obj->getInline();
 
 $code = $obj->getCode();
-echo '<pre>';
-print_r($code);die;
