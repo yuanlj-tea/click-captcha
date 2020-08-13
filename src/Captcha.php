@@ -218,6 +218,11 @@ class Captcha implements CaptchaInterface
 
         $_SESSION['random_string'] = $this->code = array_slice($this->randomString, 0, $this->wordsNum - 1);
 
+        $data = [];
+        foreach($this->randomString as $k=>$v){
+            $data[$k] = $v;
+        }
+
         shuffle($this->randomString);
 
         foreach ($this->randomString as $k => $v) {
@@ -225,7 +230,10 @@ class Captcha implements CaptchaInterface
 
             $color = imagecolorallocate($this->imgBg, rand(40, 140), rand(40, 140), rand(40, 140));
 
-            imagettftext($this->imgBg, $this->fontSize, $randAngle, $v['x_axis'], $v['y_axis'], $color, $this->fontPath, $v['word']);
+            $x = $data[$k]['x_axis'];
+            $y = $data[$k]['y_axis'];
+
+            imagettftext($this->imgBg, $this->fontSize, $randAngle, $x, $y, $color, $this->fontPath, $v['word']);
         }
     }
 
