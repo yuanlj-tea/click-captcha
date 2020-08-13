@@ -56,6 +56,10 @@ class Captcha
      */
     protected $randomString;
 
+    private $noiseLevel = 3;
+
+    private $imgLogo;
+
     public function __construct()
     {
         // start session if is not started already
@@ -76,10 +80,17 @@ class Captcha
     {
         $this->createImg();
 
-        for ($i = 0; $i < 5; $i++) {
-            $this->drawLine();
-        }
-        $this->drawSinLine($this->bgWidth/2);
+        // for ($i = 0; $i < 5; $i++) {
+        //     $this->drawLine();
+        // }
+
+        // $this->drawSinLine($this->bgWidth / 2);
+
+        $this->drawPoint();
+
+        $this->drawArc();
+
+        $this->drawNoise();
 
         $this->drawWord();
 
@@ -101,7 +112,56 @@ class Captcha
         $this->bgHeight = $imgHeight;
     }
 
-    //画正弦干扰线
+    private function drawLogo()
+    {
+        $logoPath = __DIR__ . '/logo/ky-logo2.png';
+        $logoMimeType = $this->validateBackgroundImage($logoPath);
+        $this->imgLogo = $this->createBackgroundImageFromType($logoPath, $logoMimeType);
+
+        $logoWidth = imagesx($this->imgLogo);
+        $logoHeight = imagesy($this->imgLogo);
+
+        list($srcX, $srcY) = $this->getLogoSrcPos();
+
+        // imagecopyresampled ($this->imgBg,$this->imgLogo,0,0,0,0,$this->bgWidth,$this->bgHeight,imagesx($this->imgLogo),imagesy($this->imgLogo));
+        imagecopymerge($this->imgBg, $this->imgLogo, $srcX, $srcY, 0, 0, $logoWidth, $logoHeight, 20);
+    }
+
+    private function getLogoSrcPos()
+    {
+        $centreX = $this->bgWidth / 2;
+        $centreY = $this->bgHeight / 2;
+
+        $logoWidth = imagesx($this->imgLogo);
+        $logoHeight = imagesy($this->imgLogo);
+
+        $srcX = $centreX - $logoWidth / 2;
+        $srcY = $centreY - $logoHeight / 2;
+
+        return [$srcX, $srcY];
+    }
+
+    /**
+     * 画杂点
+     * 往图片上写不同颜色的字母或数字
+     */
+    private function drawNoise()
+    {
+        $codeSet = '2345678abcdefhijkmnpqrstuvwxyz';
+        for ($i = 0; $i < $this->noiseLevel; $i++) {
+            //杂点颜色
+            $noiseColor = $this->createColor();
+            for ($j = 0; $j < 5; $j++) {
+                // 绘杂点
+                imagestring($this->imgBg, $this->fontSize / 2, mt_rand(-10, $this->bgWidth), mt_rand(-10, $this->bgHeight), $codeSet[mt_rand(0, 29)], $noiseColor);
+            }
+        }
+    }
+
+    /**
+     * 画正弦干扰线
+     * @param $w
+     */
     private function drawSinLine($w)
     {
         $h = $this->bgHeight;
@@ -110,11 +170,7 @@ class Captcha
         $w2 = rand(10, 15);
         $h3 = rand(4, 6);
 
-        $red = mt_rand(100, 255);
-        $green = mt_rand(100, 255);
-        $blue = mt_rand(100, 255);
-
-        $color = imagecolorallocate($this->imgBg, $red, $green, $blue);
+        $color = $this->createColor();
 
         for ($i = -$w / 2; $i < $w / 2; $i = $i + 0.1) {
             $y = $h / $h3 * sin($i / $w2) + $h / 2 + $h1;
@@ -123,15 +179,34 @@ class Captcha
         }
     }
 
-    public function drawLine()
+    private function drawPoint()
+    {
+        for ($i = 0; $i < $this->bgWidth; $i++) {
+            imagesetpixel($this->imgBg, rand(1, $this->bgWidth - 1), rand(1, $this->bgHeight - 1), $this->createColor());
+        }
+    }
+
+    private function drawArc()
+    {
+        imagearc($this->imgBg, mt_rand(-$this->bgWidth, $this->bgWidth), mt_rand(-$this->bgHeight, $this->bgHeight), mt_rand(0, $this->bgWidth), mt_rand(0, $this->bgHeight), mt_rand(0, 360), mt_rand(0, 360), $this->createColor());
+    }
+
+    protected function createColor()
     {
         $red = mt_rand(100, 255);
         $green = mt_rand(100, 255);
         $blue = mt_rand(100, 255);
 
         $color = imagecolorallocate($this->imgBg, $red, $green, $blue);
+        return $color;
+    }
 
-        if (mt_rand(0, 1)) { // Horizontal
+    public function drawLine()
+    {
+        $color = $this->createColor();
+
+        // Horizontal
+        if (mt_rand(0, 1)) {
             $Xa = mt_rand(0, $this->bgWidth / 2);
             $Ya = mt_rand(0, $this->bgHeight);
             $Xb = mt_rand($this->bgWidth / 2, $this->bgWidth);
