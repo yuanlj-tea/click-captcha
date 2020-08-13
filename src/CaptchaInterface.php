@@ -26,5 +26,11 @@ interface CaptchaInterface
     /**
      * 获取验证码内容
      */
-    public function getText();
+    public function getCode();
+
+    /**
+     * 校验用户输入的内容
+     * @return mixed
+     */
+    public function check($param);
 }

@@ -2,7 +2,9 @@
 
 namespace ClickCaptcha;
 
-class Captcha
+use ClickCaptcha\Exceptions\Exception;
+
+class Captcha implements CaptchaInterface
 {
     /**
      * 背景图片宽
@@ -60,6 +62,12 @@ class Captcha
 
     private $imgLogo;
 
+    /**
+     * 验证用汉字
+     * @var
+     */
+    private $code;
+
     public function __construct()
     {
         // start session if is not started already
@@ -76,29 +84,10 @@ class Captcha
         $this->randomBg = $img[$randomKey];
     }
 
-    public function createBackgroundImage()
-    {
-        $this->createImg();
-
-        // for ($i = 0; $i < 5; $i++) {
-        //     $this->drawLine();
-        // }
-
-        // $this->drawSinLine($this->bgWidth / 2);
-
-        $this->drawPoint();
-
-        $this->drawArc();
-
-        $this->drawNoise();
-
-        $this->drawWord();
-
-        header('Content-Type: image/png');
-        imagepng($this->imgBg);
-    }
-
-    public function createImg()
+    /**
+     * 创建图片
+     */
+    protected function createImg()
     {
         $imgMimeType = $this->validateBackgroundImage($this->randomBg);
         $this->imgBg = $this->createBackgroundImageFromType($this->randomBg, $imgMimeType);
@@ -114,7 +103,7 @@ class Captcha
 
     private function drawLogo()
     {
-        $logoPath = __DIR__ . '/logo/ky-logo2.png';
+        $logoPath = __DIR__ . '/logo/ky-logo.png';
         $logoMimeType = $this->validateBackgroundImage($logoPath);
         $this->imgLogo = $this->createBackgroundImageFromType($logoPath, $logoMimeType);
 
@@ -123,7 +112,6 @@ class Captcha
 
         list($srcX, $srcY) = $this->getLogoSrcPos();
 
-        // imagecopyresampled ($this->imgBg,$this->imgLogo,0,0,0,0,$this->bgWidth,$this->bgHeight,imagesx($this->imgLogo),imagesy($this->imgLogo));
         imagecopymerge($this->imgBg, $this->imgLogo, $srcX, $srcY, 0, 0, $logoWidth, $logoHeight, 20);
     }
 
@@ -147,7 +135,7 @@ class Captcha
      */
     private function drawNoise()
     {
-        $codeSet = '2345678abcdefhijkmnpqrstuvwxyz';
+        $codeSet = '2345678abcdefhijkmnpqrstuvwxyzz';
         for ($i = 0; $i < $this->noiseLevel; $i++) {
             //杂点颜色
             $noiseColor = $this->createColor();
@@ -221,15 +209,16 @@ class Captcha
         imageline($this->imgBg, $Xa, $Ya, $Xb, $Yb, $color);
     }
 
+    /**
+     * 画随机汉字
+     */
     public function drawWord()
     {
         $this->randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight, $this->fontSize);
 
-        $_SESSION['random_string'] = array_slice($this->randomString, 0, $this->wordsNum - 1);
+        $_SESSION['random_string'] = $this->code = array_slice($this->randomString, 0, $this->wordsNum - 1);
 
         shuffle($this->randomString);
-
-        // file_put_contents('./a.log',print_r($_SESSION['random_string'],true));
 
         foreach ($this->randomString as $k => $v) {
             $randAngle = mt_rand(-30, 30);
@@ -242,10 +231,9 @@ class Captcha
 
     /**
      * Validate the background image path. Return the image type if valid
-     *
-     * @param string $backgroundImage
-     * @return string
-     * @throws Exception
+     * @param $backgroundImage
+     * @return mixed
+     * @throws \Exception
      */
     protected function validateBackgroundImage($backgroundImage)
     {
@@ -271,11 +259,10 @@ class Captcha
 
     /**
      * Create background image from type
-     *
-     * @param string $backgroundImage
-     * @param string $imageType
-     * @return resource
-     * @throws Exception
+     * @param $backgroundImage
+     * @param $imageType
+     * @return false|resource
+     * @throws \Exception
      */
     protected function createBackgroundImageFromType($backgroundImage, $imageType)
     {
@@ -300,6 +287,86 @@ class Captcha
 
     public function __destruct()
     {
-        imagedestroy($this->imgBg);
+        is_resource($this->imgBg) && imagedestroy($this->imgBg);
+    }
+
+    private function get()
+    {
+        ob_start();
+        $this->create();
+        return ob_get_clean();
+    }
+
+    public function create($show = 0)
+    {
+        $this->createImg();
+
+        $this->drawPoint();
+
+        $this->drawNoise();
+
+        $this->drawWord();
+
+        if (function_exists('imagewebp')) {
+            if ($show) {
+                header('Content-Type:image/webp');
+            }
+            imagewebp($this->imgBg, null, 90);
+        } else {
+            if ($show) {
+                header('Content-Type: image/png');
+            }
+            imagepng($this->imgBg, null, 7);
+        }
+    }
+
+    /**
+     * 输出显示图片
+     */
+    public function output()
+    {
+        $this->create(1);
+    }
+
+    /**
+     * 获取base 64数据
+     * @return mixed|string
+     */
+    public function getInline()
+    {
+        return 'data:image/jpeg;base64,' . base64_encode($this->get());
+    }
+
+    /**
+     * 获取需要验证的数字
+     * @return mixed
+     */
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+    public function check($param)
+    {
+        if (!is_array($param)) {
+            throw new Exception('无效的参数');
+        }
+
+        foreach ($param as $k => $v) {
+            if (!isset($v['x']) || !isset($v['y'])) {
+                throw new \Exception('缺少参数');
+            }
+            if (
+            !(
+                $v['x'] >= $this->code[$k]['scope']['x_limit_left'] &&
+                $v['x'] <= $this->code[$k]['scope']['x_limit_right'] &&
+                $v['y'] >= $this->code[$k]['scope']['y_limit_up'] &&
+                $v['y'] <= $this->code[$k]['scope']['y_limit_down']
+            )
+            ) {
+                return false;
+            }
+        }
+        return true;
     }
 }
