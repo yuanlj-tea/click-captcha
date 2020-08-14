@@ -62,6 +62,8 @@ class Captcha implements CaptchaInterface
 
     private $imgLogo;
 
+    private $words = null;
+
     /**
      * 验证用汉字
      * @var
@@ -214,14 +216,17 @@ class Captcha implements CaptchaInterface
      */
     public function drawWord()
     {
-        $this->randomString = RandomString::getRandomString($this->wordsNum, $this->bgWidth, $this->bgHeight, $this->fontSize);
+        $this->randomString = RandomString::getRandomString(
+            $this->wordsNum,
+            $this->bgWidth,
+            $this->bgHeight,
+            $this->fontSize,
+            !empty($this->words) ? $this->words : ''
+        );
 
         $_SESSION['random_string'] = $this->code = array_slice($this->randomString, 0, $this->wordsNum - 1);
 
-        $data = [];
-        foreach($this->randomString as $k=>$v){
-            $data[$k] = $v;
-        }
+        $data = $this->randomString;
 
         shuffle($this->randomString);
 
@@ -232,7 +237,6 @@ class Captcha implements CaptchaInterface
 
             $x = $data[$k]['x_axis'];
             $y = $data[$k]['y_axis'];
-
             imagettftext($this->imgBg, $this->fontSize, $randAngle, $x, $y, $color, $this->fontPath, $v['word']);
         }
     }
@@ -352,6 +356,14 @@ class Captcha implements CaptchaInterface
     public function getCode()
     {
         return $this->code;
+    }
+
+    public function setWords($words)
+    {
+        if (mb_strlen($words) < 8) {
+            throw new Exception('字数必须大于8');
+        }
+        $this->words = $words;
     }
 
     public function check($param)

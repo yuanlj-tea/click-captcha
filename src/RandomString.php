@@ -7,7 +7,7 @@ class RandomString
     protected static $instance;
 
     protected $string = [
-        '开', '心', '月', '饼', '地', '球', '媒', '体', '自', '苹', '果', '上', '海', '东', '明', '苏', '州', '恺', '英', '无', '面'
+        '开', '心', '月', '饼', '地', '球', '媒', '体', '自', '苹', '果', '上', '海', '东', '明', '苏', '州', '英', '无', '面'
     ];
 
     protected function getRandomString($num, $x_axis, $y_axis, $fontSize, $stringLib = '')
