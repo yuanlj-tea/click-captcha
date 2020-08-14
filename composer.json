@@ -18,5 +18,15 @@
         "psr-4": {
             "ClickCaptcha\\": "src/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ClickCaptcha\\ClickCaptchaServiceProvider"
+            ],
+            "aliases": {
+                "ClickCaptcha": "ClickCaptcha\\ClickCaptchaFacade"
+            }
+        }
     }
 }
