@@ -7,4 +7,5 @@ $obj = new \ClickCaptcha\Captcha();
 
 // $obj->getInline();
 // $obj->setWords();
-$obj->output();
+$obj->setDrawLogo()
+    ->output();

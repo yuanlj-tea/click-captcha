@@ -12,7 +12,8 @@
     "require": {
         "php": ">=7.1",
         "ext-gd": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+      "ext-fileinfo": "*"
     },
     "autoload": {
         "psr-4": {

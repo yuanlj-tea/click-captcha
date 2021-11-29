@@ -70,6 +70,18 @@ class Captcha implements CaptchaInterface
      */
     private $code;
 
+    /**
+     * logo路径
+     * @var string
+     */
+    private $logoPath = '';
+
+    /**
+     * 是否画logo
+     * @var bool
+     */
+    private $drawLogo = false;
+
     public function __construct()
     {
         // start session if is not started already
@@ -105,18 +117,38 @@ class Captcha implements CaptchaInterface
 
     private function drawLogo()
     {
-        $logoPath = __DIR__ . '/logo/ky-logo.png';
+        $logoPath = !empty($this->logoPath) ? $this->logoPath : __DIR__ . '/logo/ky-logo.png';
         $logoMimeType = $this->validateBackgroundImage($logoPath);
         $this->imgLogo = $this->createBackgroundImageFromType($logoPath, $logoMimeType);
 
         $logoWidth = imagesx($this->imgLogo);
         $logoHeight = imagesy($this->imgLogo);
 
-        list($srcX, $srcY) = $this->getLogoSrcPos();
+        // list($srcX, $srcY) = $this->getLogoSrcPos();
+        list($srcX, $srcY) = $this->getLogoRightBottomPos();
 
         imagecopymerge($this->imgBg, $this->imgLogo, $srcX, $srcY, 0, 0, $logoWidth, $logoHeight, 20);
     }
 
+    /**
+     * 设置logo在右下角时的起始坐标
+     * @return array
+     */
+    private function getLogoRightBottomPos()
+    {
+        $logoWidth = imagesx($this->imgLogo);
+        $logoHeight = imagesy($this->imgLogo);
+
+        $srcX = $this->bgWidth - $logoWidth;
+        $srcY = $this->bgHeight - $logoHeight;
+
+        return [$srcX, $srcY];
+    }
+
+    /**
+     * 设置logo在中间位置时的起始坐标
+     * @return float[]|int[]
+     */
     private function getLogoSrcPos()
     {
         $centreX = $this->bgWidth / 2;
@@ -300,6 +332,7 @@ class Captcha implements CaptchaInterface
     public function __destruct()
     {
         is_resource($this->imgBg) && imagedestroy($this->imgBg);
+        is_resource($this->imgLogo) && imagedestroy($this->imgLogo);
     }
 
     private function get()
@@ -313,9 +346,13 @@ class Captcha implements CaptchaInterface
     {
         $this->createImg();
 
-        $this->drawPoint();
+        // $this->drawPoint();
 
-        $this->drawNoise();
+        // $this->drawNoise();
+
+        if ($this->drawLogo) {
+            $this->drawLogo();
+        }
 
         $this->drawWord();
 
@@ -366,6 +403,30 @@ class Captcha implements CaptchaInterface
         $this->words = $words;
     }
 
+    /**
+     * 设置logo文件路径
+     * @param $path
+     * @return $this
+     * @throws \Exception
+     */
+    protected function setLogoPath($path)
+    {
+        if (!is_file($path)) {
+            throw new \Exception('无效的logo路径');
+        }
+        $this->logoPath = $path;
+        $this->drawLogo = true;
+
+        return $this;
+    }
+
+    public function setDrawLogo()
+    {
+        $this->drawLogo = true;
+
+        return $this;
+    }
+
     public function check($param)
     {
         if (!is_array($param)) {
@@ -387,10 +448,10 @@ class Captcha implements CaptchaInterface
             $y = $param[$k]['y'];
 
             if (
-            !(
-                $x >= $v['x_limit_left'] && $x <= $v['x_limit_right'] &&
-                $y >= $v['y_limit_up'] && $y <= $v['y_limit_down']
-            )
+                !(
+                    $x >= $v['x_limit_left'] && $x <= $v['x_limit_right'] &&
+                    $y >= $v['y_limit_up'] && $y <= $v['y_limit_down']
+                )
             ) {
                 return false;
             }
